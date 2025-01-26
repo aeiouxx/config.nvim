@@ -451,7 +451,19 @@ require('mason-lspconfig').setup()
 local servers = {
   lua_ls = {
     Lua = {
-      workspace = { checkThirdParty = false },
+      runtime = {
+        path = vim.split(package.path, ';'),
+      },
+      diagnostics = {
+        globals = { 'vim' },
+      },
+      workspace = {
+        checkThirdParty = false,
+        library = {
+          vim.fn.expand("$VIMRUNTIME/lua"),
+          vim.fn.stdpath("config") .. "/lua",
+        },
+      },
       telemetry = { enable = false },
     },
   },
