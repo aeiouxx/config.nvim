@@ -1,7 +1,6 @@
 -- Based on the kickstart.nvim template
 -- https://github.com/nvim-lua/kickstart.nvim
 
-
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
@@ -87,7 +86,8 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
       on_attach = function(bufnr)
-        vim.keymap.set('n', '<leader>hp', require('gitsigns').preview_hunk, { buffer = bufnr, desc = 'Preview git hunk' })
+        vim.keymap.set('n', '<leader>hp', require('gitsigns').preview_hunk,
+          { buffer = bufnr, desc = 'Preview git hunk' })
 
         -- don't override the built-in and fugitive keymaps
         local gs = package.loaded.gitsigns
@@ -150,7 +150,7 @@ require('lazy').setup({
     },
   },
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim',  opts = {} },
+  { 'numToStr/Comment.nvim',    opts = {} },
 
   -- Fuzzy Finder (files, lsp, etc)
   {
@@ -170,6 +170,8 @@ require('lazy').setup({
       },
     },
   },
+  -- Highlight todo, notes, etc in comments
+  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
   {
     -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
@@ -178,12 +180,26 @@ require('lazy').setup({
     },
     build = ':TSUpdate',
   },
-
-  require 'kickstart.plugins.autoformat',
-  -- require 'kickstart.plugins.debug',
-
   { import = 'custom.plugins' },
-}, {})
+}, {
+  ui = {
+    icons = vim.g.have_nerd_font and {} or {
+      cmd = '⌘',
+      config = '🛠',
+      event = '📅',
+      ft = '📂',
+      init = '⚙',
+      keys = '🗝',
+      plugin = '🔌',
+      runtime = '💻',
+      require = '🌙',
+      source = '📄',
+      start = '🚀',
+      task = '📌',
+      lazy = '💤 ',
+    },
+  },
+})
 
 vim.opt.cursorline = true
 vim.o.shell = 'pwsh.exe'
@@ -204,6 +220,10 @@ vim.wo.wrap = false
 vim.wo.number = true
 -- Enable relative line numbers
 vim.wo.relativenumber = true
+
+-- Display whitespace characters
+vim.opt.list = true
+vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣',}
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -237,7 +257,6 @@ vim.o.completeopt = 'menuone,noselect'
 vim.o.termguicolors = true
 
 -- [[ Basic Keymaps ]]
-
 -- Keymaps for better default experience
 -- See `:help vim.keymap.set()`
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
@@ -294,7 +313,8 @@ local function find_git_root()
   end
 
   -- Find the Git root directory from the current file's path
-  local git_root = vim.fn.systemlist("git -C " .. vim.fn.escape(current_dir, " ") .. " rev-parse --show-toplevel")[1]
+  local git_root = vim.fn.systemlist("git -C " .. vim.fn.escape(current_dir, " ") .. " rev-parse --show-toplevel")
+      [1]
   if vim.v.shell_error ~= 0 then
     print("Not a git repository. Searching on current working directory")
     return cwd
