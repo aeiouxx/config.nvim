@@ -39,7 +39,44 @@ require('lazy').setup({
       'folke/neodev.nvim',
     },
   },
-
+  { -- Autoformat
+    'stevearc/conform.nvim',
+    event = { 'BufWritePre' },
+    cmd = { 'ConformInfo' },
+    keys = {
+      {
+        '<leader>f',
+        function()
+          require('conform').format { async = true, lsp_format = 'fallback' }
+        end,
+        mode = '',
+        desc = '[F]ormat buffer',
+      },
+    },
+    opts = {
+      notify_on_error = false,
+      format_on_save = function(bufnr)
+        local disable_filetypes = {}
+        -- { c = true, cpp = true }
+        if disable_filetypes[vim.bo[bufnr].filetype] then
+          return nil
+        else
+          return {
+            timeout_ms = 500,
+            lsp_format = 'fallback',
+          }
+        end
+      end,
+      formatters_by_ft = {
+        lua = { 'stylua' },
+        -- Conform can also run multiple formatters sequentially
+        -- python = { "isort", "black" },
+        --
+        -- You can use 'stop_after_first' to run the first available formatter from the list
+        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+      },
+    },
+  },
   {
     -- Autocompletion
     'hrsh7th/nvim-cmp',
@@ -118,7 +155,7 @@ require('lazy').setup({
     priority = 1000,
     config = function()
       require('onedark').setup({
-        style = 'warmer',
+        style = 'deep',
         transparent = true,
         highlights = {
           ["CursorLineNr"] = { fg = '#aaaa00' },
@@ -223,7 +260,7 @@ vim.wo.relativenumber = true
 
 -- Display whitespace characters
 vim.opt.list = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣',}
+vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣', }
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -499,6 +536,9 @@ local servers = {
   },
 }
 
+
+
+
 -- Setup neovim lua configuration
 require('neodev').setup()
 
@@ -572,23 +612,23 @@ cmp.setup {
   },
 }
 
-local function toggleNeoTree()
-  local current_win = vim.api.nvim_get_current_win()
-  local neotree_win
-  for _, win in pairs(vim.api.nvim_list_wins()) do
-    local buf = vim.api.nvim_win_get_buf(win)
-    local buftype = vim.api.nvim_buf_get_option(buf, 'filetype')
-    if buftype == 'neo-tree' then
-      neotree_win = win
-      break
-    end
-  end
-  if neotree_win and current_win == neotree_win then
-    vim.api.nvim_command('wincmd p')
-  elseif neotree_win then
-    vim.api.nvim_set_current_win(neotree_win)
-  else
-    vim.api.nvim_command('Neotree toggle')
-  end
-end
-vim.keymap.set('n', '<leader>t', toggleNeoTree, { desc = 'Neotree toggle focus' })
+-- local function toggleNeoTree()
+--   local current_win = vim.api.nvim_get_current_win()
+--   local neotree_win
+--   for _, win in pairs(vim.api.nvim_list_wins()) do
+--     local buf = vim.api.nvim_win_get_buf(win)
+--     local buftype = vim.api.nvim_buf_get_option(buf, 'filetype')
+--     if buftype == 'neo-tree' then
+--       neotree_win = win
+--       break
+--     end
+--   end
+--   if neotree_win and current_win == neotree_win then
+--     vim.api.nvim_command('wincmd p')
+--   elseif neotree_win then
+--     vim.api.nvim_set_current_win(neotree_win)
+--   else
+--     vim.api.nvim_command('Neotree toggle')
+--   end
+-- end
+-- vim.keymap.set('n', '<leader>t', toggleNeoTree, { desc = 'Neotree toggle focus' })
