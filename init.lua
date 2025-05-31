@@ -56,8 +56,8 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
-        local disable_filetypes = {}
-        -- { c = true, cpp = true }
+        -- For now disabled
+        local disable_filetypes = { javascript = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
         else
@@ -92,7 +92,8 @@ require('lazy').setup({
       'rafamadriz/friendly-snippets',
     },
   },
-  {                     -- Useful plugin to show you pending keybinds.
+  {
+    -- Useful plugin to show pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     config = function() -- This is the function that runs, AFTER loading
@@ -123,30 +124,40 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
       on_attach = function(bufnr)
-        vim.keymap.set('n', '<leader>hp', require('gitsigns').preview_hunk,
-          { buffer = bufnr, desc = 'Preview git hunk' })
-
-        -- don't override the built-in and fugitive keymaps
         local gs = package.loaded.gitsigns
+
+        -- Navigation (respect diff mode)
         vim.keymap.set({ 'n', 'v' }, ']c', function()
-          if vim.wo.diff then
-            return ']c'
-          end
-          vim.schedule(function()
-            gs.next_hunk()
-          end)
+          if vim.wo.diff then return ']c' end
+          vim.schedule(function() gs.next_hunk() end)
           return '<Ignore>'
         end, { expr = true, buffer = bufnr, desc = 'Jump to next hunk' })
+
         vim.keymap.set({ 'n', 'v' }, '[c', function()
-          if vim.wo.diff then
-            return '[c'
-          end
-          vim.schedule(function()
-            gs.prev_hunk()
-          end)
+          if vim.wo.diff then return '[c' end
+          vim.schedule(function() gs.prev_hunk() end)
           return '<Ignore>'
         end, { expr = true, buffer = bufnr, desc = 'Jump to previous hunk' })
-      end,
+
+        -- Hunk actions
+        vim.keymap.set('n', '<leader>hs', gs.stage_hunk, { buffer = bufnr, desc = 'Stage Hunk' })
+        vim.keymap.set('v', '<leader>hs', function()
+          gs.stage_hunk { vim.fn.line('.'), vim.fn.line('v') }
+        end, { buffer = bufnr, desc = 'Stage Hunk' })
+
+        vim.keymap.set('n', '<leader>hr', gs.reset_hunk, { buffer = bufnr, desc = 'Reset Hunk' })
+        vim.keymap.set('v', '<leader>hr', function()
+          gs.reset_hunk { vim.fn.line('.'), vim.fn.line('v') }
+        end, { buffer = bufnr, desc = 'Reset Hunk' })
+
+        vim.keymap.set('n', '<leader>hu', gs.undo_stage_hunk, { buffer = bufnr, desc = 'Undo Stage Hunk' })
+        vim.keymap.set('n', '<leader>hp', gs.preview_hunk, { buffer = bufnr, desc = 'Preview Hunk' })
+
+        -- Optional: full buffer actions
+        vim.keymap.set('n', '<leader>hS', gs.stage_buffer, { buffer = bufnr, desc = 'Stage Buffer' })
+        vim.keymap.set('n', '<leader>hR', gs.reset_buffer, { buffer = bufnr, desc = 'Reset Buffer' })
+        vim.keymap.set('n', '<leader>hb', gs.toggle_current_line_blame, { buffer = bufnr, desc = 'Toggle Line Blame' })
+      end
     },
   },
   {
@@ -193,15 +204,18 @@ require('lazy').setup({
   {
     'nvim-telescope/telescope.nvim',
     branch = '0.1.x',
+    opts = {
+      file_ignore_patterns = {
+        "node_modules", "%.git/", "dist", "build", "%.min%.js"
+      },
+      defaults = {
+        path_display = { "smart" },
+      },
+    },
     dependencies = {
       'nvim-lua/plenary.nvim',
-      -- Fuzzy Finder Algorithm which requires local dependencies to be built.
-      -- Only load if `make` is available. Make sure you have the system
-      -- requirements installed.
       {
         'nvim-telescope/telescope-fzf-native.nvim',
-        -- NOTE: If you are having trouble with this installation,
-        --       refer to the README for telescope-fzf-native for more instructions.
         build =
         'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build'
       },
@@ -293,6 +307,11 @@ vim.o.completeopt = 'menuone,noselect'
 -- NOTE: You should make sure your terminal supports this
 vim.o.termguicolors = true
 
+vim.o.foldmethod = 'expr'
+vim.o.foldexpr = 'nvim_treesitter#foldexpr()'
+vim.o.foldenable = true
+vim.o.foldlevel = 99
+
 -- [[ Basic Keymaps ]]
 -- Keymaps for better default experience
 -- See `:help vim.keymap.set()`
@@ -364,7 +383,8 @@ local function live_grep_git_root()
   local git_root = find_git_root()
   if git_root then
     require('telescope.builtin').live_grep({
-      search_dirs = { git_root },
+      cwd = git_root,
+      -- search_dirs = { git_root },
     })
   end
 end
@@ -386,10 +406,15 @@ vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
-vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
-vim.keymap.set('n', '<leader>sG', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by [G]rep on Git Root' })
+vim.keymap.set('n', '<leader>sG', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
+vim.keymap.set('n', '<leader>sg', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by [G]rep on Git Root' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
+-- Other useful git settings shortcuts:
+vim.keymap.set('n', '<leader>gb', require('telescope.builtin').git_branches, { desc = '[G]it: [B]ranches' })
+vim.keymap.set('n', '<leader>gc', require('telescope.builtin').git_commits, { desc = '[G]it: [C]ommits' })
+--vim.keymap.set('n', '<leader>gS', require('telescope.builtin').git_status, { desc = '[G]it: [S]tatus' })
+vim.keymap.set('n', '<leader>hb', require('gitsigns').toggle_current_line_blame, { desc = 'Toggle Git [H]unk [B]lame' })
 
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
@@ -553,16 +578,25 @@ mason_lspconfig.setup {
   ensure_installed = vim.tbl_keys(servers),
 }
 
-mason_lspconfig.setup_handlers {
-  function(server_name)
-    require('lspconfig')[server_name].setup {
-      capabilities = capabilities,
-      on_attach = on_attach,
-      settings = servers[server_name],
-      filetypes = (servers[server_name] or {}).filetypes,
-    }
-  end,
-}
+-- Manual LSP config setup
+for server_name, config in pairs(servers) do
+  require('lspconfig')[server_name].setup {
+    capabilities = capabilities,
+    on_attach = on_attach,
+    settings = config,
+    filetypes = config.filetypes,
+  }
+end
+-- mason_lspconfig.setup_handlers {
+--   function(server_name)
+--     require('lspconfig')[server_name].setup {
+--       capabilities = capabilities,
+--       on_attach = on_attach,
+--       settings = servers[server_name],
+--       filetypes = (servers[server_name] or {}).filetypes,
+--     }
+--   end,
+-- }
 
 -- [[ Configure nvim-cmp ]]
 -- See `:help cmp`
@@ -611,24 +645,3 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
-
--- local function toggleNeoTree()
---   local current_win = vim.api.nvim_get_current_win()
---   local neotree_win
---   for _, win in pairs(vim.api.nvim_list_wins()) do
---     local buf = vim.api.nvim_win_get_buf(win)
---     local buftype = vim.api.nvim_buf_get_option(buf, 'filetype')
---     if buftype == 'neo-tree' then
---       neotree_win = win
---       break
---     end
---   end
---   if neotree_win and current_win == neotree_win then
---     vim.api.nvim_command('wincmd p')
---   elseif neotree_win then
---     vim.api.nvim_set_current_win(neotree_win)
---   else
---     vim.api.nvim_command('Neotree toggle')
---   end
--- end
--- vim.keymap.set('n', '<leader>t', toggleNeoTree, { desc = 'Neotree toggle focus' })
