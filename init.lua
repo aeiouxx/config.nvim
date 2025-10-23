@@ -69,11 +69,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        json = { 'jq', 'prettierd' },
       },
     },
   },
@@ -128,26 +124,34 @@ require('lazy').setup({
 
         -- Navigation (respect diff mode)
         vim.keymap.set({ 'n', 'v' }, ']c', function()
-          if vim.wo.diff then return ']c' end
-          vim.schedule(function() gs.next_hunk() end)
+          if vim.wo.diff then
+            return ']c'
+          end
+          vim.schedule(function()
+            gs.next_hunk()
+          end)
           return '<Ignore>'
         end, { expr = true, buffer = bufnr, desc = 'Jump to next hunk' })
 
         vim.keymap.set({ 'n', 'v' }, '[c', function()
-          if vim.wo.diff then return '[c' end
-          vim.schedule(function() gs.prev_hunk() end)
+          if vim.wo.diff then
+            return '[c'
+          end
+          vim.schedule(function()
+            gs.prev_hunk()
+          end)
           return '<Ignore>'
         end, { expr = true, buffer = bufnr, desc = 'Jump to previous hunk' })
 
         -- Hunk actions
         vim.keymap.set('n', '<leader>hs', gs.stage_hunk, { buffer = bufnr, desc = 'Stage Hunk' })
         vim.keymap.set('v', '<leader>hs', function()
-          gs.stage_hunk { vim.fn.line('.'), vim.fn.line('v') }
+          gs.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
         end, { buffer = bufnr, desc = 'Stage Hunk' })
 
         vim.keymap.set('n', '<leader>hr', gs.reset_hunk, { buffer = bufnr, desc = 'Reset Hunk' })
         vim.keymap.set('v', '<leader>hr', function()
-          gs.reset_hunk { vim.fn.line('.'), vim.fn.line('v') }
+          gs.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
         end, { buffer = bufnr, desc = 'Reset Hunk' })
 
         vim.keymap.set('n', '<leader>hu', gs.undo_stage_hunk, { buffer = bufnr, desc = 'Undo Stage Hunk' })
@@ -157,23 +161,29 @@ require('lazy').setup({
         vim.keymap.set('n', '<leader>hS', gs.stage_buffer, { buffer = bufnr, desc = 'Stage Buffer' })
         vim.keymap.set('n', '<leader>hR', gs.reset_buffer, { buffer = bufnr, desc = 'Reset Buffer' })
         vim.keymap.set('n', '<leader>hb', gs.toggle_current_line_blame, { buffer = bufnr, desc = 'Toggle Line Blame' })
-      end
+      end,
     },
   },
   {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
+    'scottmckendry/cyberdream.nvim',
+    lazy = false,
     priority = 1000,
     config = function()
-      require('onedark').setup({
-        style = 'deep',
+      require('cyberdream').setup {
         transparent = true,
+        borderless_pickers = false,
+        italic_comments = true,
         highlights = {
-          ["CursorLineNr"] = { fg = '#aaaa00' },
-          ["CursorLine"] = { bg = 'NONE' },
+          ['CursorLineNr'] = { fg = '#aaaa00' },
+          ['CursorLine'] = { bg = 'NONE' },
         },
-      })
-      vim.cmd.colorscheme 'onedark'
+        extensions = {
+          telescope = true,
+          cmp = true,
+          whichkey = true,
+        },
+      }
+      vim.cmd.colorscheme 'cyberdream'
     end,
   },
   {
@@ -198,7 +208,7 @@ require('lazy').setup({
     },
   },
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim',    opts = {} },
+  { 'numToStr/Comment.nvim', opts = {} },
 
   -- Fuzzy Finder (files, lsp, etc)
   {
@@ -206,18 +216,21 @@ require('lazy').setup({
     branch = '0.1.x',
     opts = {
       file_ignore_patterns = {
-        "node_modules", "%.git/", "dist", "build", "%.min%.js"
+        'node_modules',
+        '%.git/',
+        'dist',
+        'build',
+        '%.min%.js',
       },
       defaults = {
-        path_display = { "smart" },
+        path_display = { 'smart' },
       },
     },
     dependencies = {
       'nvim-lua/plenary.nvim',
       {
         'nvim-telescope/telescope-fzf-native.nvim',
-        build =
-        'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build'
+        build = 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build',
       },
     },
   },
@@ -258,14 +271,13 @@ vim.o.shellcmdflag = '-NoLogo -NoProfile -Command'
 vim.o.shellquote = ''
 vim.o.shellxquote = ''
 
-vim.o.softtabstop = 2
-vim.o.shiftwidth = 2
+vim.o.softtabstop = 4
+vim.o.shiftwidth = 4
 vim.o.expandtab = true
 
 -- Set highlight on search
 vim.o.hlsearch = false
 vim.wo.wrap = false
-
 
 -- Make line numbers default
 vim.wo.number = true
@@ -274,7 +286,7 @@ vim.wo.relativenumber = true
 
 -- Display whitespace characters
 vim.opt.list = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣', }
+vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -361,18 +373,17 @@ local function find_git_root()
   local current_dir
   local cwd = vim.fn.getcwd()
   -- If the buffer is not associated with a file, return nil
-  if current_file == "" then
+  if current_file == '' then
     current_dir = cwd
   else
     -- Extract the directory from the current file's path
-    current_dir = vim.fn.fnamemodify(current_file, ":h")
+    current_dir = vim.fn.fnamemodify(current_file, ':h')
   end
 
   -- Find the Git root directory from the current file's path
-  local git_root = vim.fn.systemlist("git -C " .. vim.fn.escape(current_dir, " ") .. " rev-parse --show-toplevel")
-      [1]
+  local git_root = vim.fn.systemlist('git -C ' .. vim.fn.escape(current_dir, ' ') .. ' rev-parse --show-toplevel')[1]
   if vim.v.shell_error ~= 0 then
-    print("Not a git repository. Searching on current working directory")
+    print 'Not a git repository. Searching on current working directory'
     return cwd
   end
   return git_root
@@ -382,10 +393,10 @@ end
 local function live_grep_git_root()
   local git_root = find_git_root()
   if git_root then
-    require('telescope.builtin').live_grep({
+    require('telescope.builtin').live_grep {
       cwd = git_root,
       -- search_dirs = { git_root },
-    })
+    }
   end
 end
 
@@ -394,14 +405,6 @@ vim.api.nvim_create_user_command('LiveGrepGitRoot', live_grep_git_root, {})
 -- See `:help telescope.builtin`
 vim.keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc = '[?] Find recently opened files' })
 vim.keymap.set('n', '<leader><space>', require('telescope.builtin').buffers, { desc = '[ ] Find existing buffers' })
-vim.keymap.set('n', '<leader>/', function()
-  -- You can pass additional configuration to telescope to change theme, layout, etc.
-  require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-    winblend = 10,
-    previewer = false,
-  })
-end, { desc = '[/] Fuzzily search in current buffer' })
-
 vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
@@ -420,10 +423,26 @@ vim.keymap.set('n', '<leader>hb', require('gitsigns').toggle_current_line_blame,
 -- See `:help nvim-treesitter`
 -- Defer Treesitter setup after first render to improve startup time of 'nvim {filename}'
 vim.defer_fn(function()
-  require 'nvim-treesitter.install'.compilers = { "clang" }
+  require('nvim-treesitter.install').compilers = { 'clang' }
   require('nvim-treesitter.configs').setup {
     -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash' },
+    ensure_installed = {
+      'gdscript',
+      'godot_resource',
+      'gdshader',
+      'c',
+      'cpp',
+      'go',
+      'lua',
+      'python',
+      'rust',
+      'tsx',
+      'javascript',
+      'typescript',
+      'vimdoc',
+      'vim',
+      'bash',
+    },
 
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
     auto_install = false,
@@ -542,8 +561,8 @@ local servers = {
       workspace = {
         checkThirdParty = false,
         library = {
-          vim.fn.expand("$VIMRUNTIME/lua"),
-          vim.fn.stdpath("config") .. "/lua",
+          vim.fn.expand '$VIMRUNTIME/lua',
+          vim.fn.stdpath 'config' .. '/lua',
         },
       },
       telemetry = { enable = false },
@@ -554,15 +573,22 @@ local servers = {
       filetypes = { 'cmake', 'CMakeLists.txt' },
     },
   },
-  clangd = {
-  },
+  clangd = {},
   rust_analyzer = {
-    cmd = { "rustup", "run", "stable", "rust-analyzer" },
+    cmd = { 'rustup', 'run', 'stable', 'rust-analyzer' },
   },
+  pylsp = {
+    pylsp = {
+      plugins = {
+        pycodestyle = {
+          enabled = true,
+          maxLineLength = 120,
+        },
+      },
+    },
+  },
+  zls = {},
 }
-
-
-
 
 -- Setup neovim lua configuration
 require('neodev').setup()
