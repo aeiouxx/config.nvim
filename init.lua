@@ -515,9 +515,9 @@ local on_attach = function(_, bufnr)
 
     vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc })
   end
-
   nmap('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
   nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+  nmap('<leader>ko', '<cmd>ClangdSwitchSourceHeader<CR>', '[K][O] Switch Header/Source')
 
   nmap('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
   nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
@@ -613,16 +613,6 @@ for server_name, config in pairs(servers) do
     filetypes = config.filetypes,
   }
 end
--- mason_lspconfig.setup_handlers {
---   function(server_name)
---     require('lspconfig')[server_name].setup {
---       capabilities = capabilities,
---       on_attach = on_attach,
---       settings = servers[server_name],
---       filetypes = (servers[server_name] or {}).filetypes,
---     }
---   end,
--- }
 
 -- [[ Configure nvim-cmp ]]
 -- See `:help cmp`
